@@ -2,11 +2,7 @@
 FROM php:8.2-apache
 
 # Cài đặt các extension PHP cần thiết
-RUN docker-php-ext-install pdo pdo_mysql mysqli \
-    && apt-get update \
-    && apt-get install -y sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo_sqlite \
-    && rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install pdo pdo_mysql mysqli
 
 # Enable Apache rewrite module
 RUN a2enmod rewrite

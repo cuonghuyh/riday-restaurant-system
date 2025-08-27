@@ -311,4 +311,17 @@ class MenuModel
         // Cloudinary public_id thường không có extension
         return !preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $imagePath);
     }
+    
+    /**
+     * Clear broken image URL from database
+     */
+    public function clearImageUrl($itemId) {
+        try {
+            $stmt = $this->db->prepare('UPDATE menu_items SET image = NULL WHERE id = ?');
+            return $stmt->execute([$itemId]);
+        } catch (Exception $e) {
+            error_log('MenuModel::clearImageUrl error: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
