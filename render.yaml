@@ -1,22 +1,27 @@
 services:
   - type: web
-    name: restaurant-ordering
+    name: riday-restaurant-system
     env: php
     plan: free
-    buildCommand: composer install --no-dev --optimize-autoloader
+    buildCommand: |
+      # Install composer dependencies
+      curl -sS https://getcomposer.org/installer | php
+      php composer.phar install --no-dev --optimize-autoloader || true
     startCommand: php -S 0.0.0.0:$PORT -t .
     envVars:
+      - key: PORT
+        generateValue: true
       - key: DB_HOST
-        value: YOUR_DB_HOST
-      - key: DB_NAME
-        value: YOUR_DB_NAME
+        sync: false
+      - key: DB_NAME  
+        sync: false
       - key: DB_USER
-        value: YOUR_DB_USER
+        sync: false
       - key: DB_PASS
-        value: YOUR_DB_PASS
+        sync: false
       - key: CLOUDINARY_CLOUD_NAME
-        value: YOUR_CLOUDINARY_CLOUD_NAME
+        sync: false
       - key: CLOUDINARY_API_KEY
-        value: YOUR_CLOUDINARY_API_KEY
+        sync: false
       - key: CLOUDINARY_API_SECRET
-        value: YOUR_CLOUDINARY_API_SECRET
+        sync: false
