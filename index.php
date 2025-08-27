@@ -2,6 +2,12 @@
 $controller = $_GET['controller'] ?? 'restaurant'; // Default to restaurant home page
 $action = $_GET['action'] ?? 'home';
 
+// QR Generator route
+if (isset($_GET['qr_generator']) || $controller === 'qr') {
+    include 'qr_generator.php';
+    exit;
+}
+
 switch ($controller) {
     case 'restaurant':
         require_once 'controllers/RestaurantController.php';
