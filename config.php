@@ -11,6 +11,12 @@ if (!defined('DB_HOST')) define('DB_HOST', $_ENV['DB_HOST'] ?? '127.0.0.1');
 if (!defined('DB_NAME')) define('DB_NAME', $_ENV['DB_NAME'] ?? 'restaurant_ordering');
 if (!defined('DB_USER')) define('DB_USER', $_ENV['DB_USER'] ?? 'root');
 if (!defined('DB_PASS')) define('DB_PASS', $_ENV['DB_PASS'] ?? 'mysql');
+if (!defined('DB_PORT')) define('DB_PORT', $_ENV['DB_PORT'] ?? '3306');
+
+// Detect database type (PostgreSQL for production, MySQL for local)
+if (!defined('DB_TYPE')) {
+    define('DB_TYPE', (isset($_ENV['DATABASE_URL']) || isset($_ENV['DB_HOST']) && strpos($_ENV['DB_HOST'], 'dpg-') !== false) ? 'pgsql' : 'mysql');
+}
 
 // Charset
 if (!defined('DB_CHARSET')) define('DB_CHARSET', 'utf8mb4');
@@ -23,9 +29,21 @@ if (!defined('CLOUDINARY_CLOUD_NAME')) define('CLOUDINARY_CLOUD_NAME', $_ENV['CL
 if (!defined('CLOUDINARY_API_KEY')) define('CLOUDINARY_API_KEY', $_ENV['CLOUDINARY_API_KEY'] ?? '');
 if (!defined('CLOUDINARY_API_SECRET')) define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET'] ?? '');
 
-// Thông tin này được include ở các file cần kết nối DB.
-// Ví dụ:
-// require_once __DIR__ . '/config.php';
-// $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=".DB_CHARSET, DB_USER, DB_PASS);
+// Database connection helper function
+function getDatabaseConnection() {
+    if (DB_TYPE === 'pgsql') {
+        $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
+    } else {
+        $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    }
+    
+    try {
+        $pdo = new PDO($dsn, DB_USER, DB_PASS);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $pdo;
+    } catch (PDOException $e) {
+        die("Database connection failed: " . $e->getMessage());
+    }
+}
 
 ?>
