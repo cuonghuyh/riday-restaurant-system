@@ -1,4 +1,17 @@
 RewriteEngine On
 RewriteBase /
+
+# Allow direct access to static files
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ - [S=40]
+
+# Handle PHP files directly
+RewriteRule ^qr_generator\.php$ qr_generator.php [L]
+RewriteRule ^views/(.*)$ views/$1 [L]
+RewriteRule ^assets/(.*)$ assets/$1 [L]
+
+# Route everything else through index.php
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [QSA]
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]

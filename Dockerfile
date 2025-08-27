@@ -35,7 +35,9 @@ RUN composer install --optimize-autoloader --no-dev
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/assets
+    && chmod -R 777 /var/www/html/assets \
+    && mkdir -p /var/www/html/database \
+    && chmod -R 777 /var/www/html/database
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
