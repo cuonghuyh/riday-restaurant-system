@@ -1,17 +1,33 @@
 {
-    "name": "themainframe/php-mvc-sample",
+    "name": "riday/restaurant-ordering-system",
+    "description": "Restaurant Ordering System with QR Code support",
+    "type": "project",
     "authors": [
         {
-            "name": "Damien Walsh",
-            "email": "me@damow.net"
+            "name": "Riday Restaurant",
+            "email": "admin@riday-restaurant.com"
         }
     ],
     "require": {
-
+        "php": "^8.1",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-gd": "*"
     },
     "autoload": {
         "psr-0": {
-            "": ["controller/", "model/", "./"]
+            "": ["controllers/", "models/", "./"]
         }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php -r \"if (!file_exists('.env') && file_exists('.env.production')) { copy('.env.production', '.env'); }\""
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     }
 }

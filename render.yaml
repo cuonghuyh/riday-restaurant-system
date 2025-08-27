@@ -1,0 +1,30 @@
+services:
+  # Web Service
+  - type: web
+    name: riday-restaurant
+    env: docker
+    plan: free
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_NAME
+        value: riday_restaurant_db
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+    # Auto-deploy from GitHub
+    autoDeploy: true
+
+  # Database Service (PostgreSQL - Free tier)
+  - type: pgsql
+    name: riday-restaurant-db
+    databaseName: riday_restaurant_db
+    databaseUser: riday_user
+    plan: free
