@@ -2,7 +2,12 @@
 node_modules/
 .git/
 .gitignore
-*.md
+README.md
 .env
 .env.example
 *.log
+.vscode/
+*.tmp
+*.temp
+restaurant-ordering-system/
+php-mvc-sample/
