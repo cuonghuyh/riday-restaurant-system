@@ -1,22 +1,19 @@
 {
     "name": "restaurant/ordering-system",
     "description": "Restaurant Ordering System with PHP MVC",
-    "version": "1.0.0",
     "type": "project",
     "require": {
-        "php": ">=7.4",
+        "php": "^7.4|^8.0",
         "ext-pdo": "*",
-        "ext-pdo_mysql": "*",
-        "ext-json": "*",
-        "ext-mbstring": "*",
-        "ext-curl": "*"
+        "ext-mysql": "*"
     },
     "autoload": {
         "psr-4": {
-            "": "."
+            "": ""
         }
     },
     "scripts": {
-        "start": "php -S 0.0.0.0:$PORT -t ."
+        "start": "php -S 0.0.0.0:$PORT -t .",
+        "serve": "php -S localhost:8000 -t ."
     }
 }
