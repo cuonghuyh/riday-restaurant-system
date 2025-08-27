@@ -1,0 +1,12 @@
+{
+  "name": "restaurant-ordering-system",
+  "version": "1.0.0",
+  "description": "Restaurant Ordering System with PHP",
+  "scripts": {
+    "start": "php -S 0.0.0.0:$PORT -t .",
+    "dev": "php -S localhost:8000 -t ."
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

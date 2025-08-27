@@ -1,31 +1,35 @@
 services:
   - type: web
     name: restaurant-ordering-system
-    env: php
+    env: docker
     plan: free
-    buildCommand: composer install --no-dev
-    startCommand: php -S 0.0.0.0:$PORT -t .
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_HOST
-        value: dpg-your-database-host
+        fromDatabase:
+          name: restaurant-db
+          property: host
       - key: DB_NAME  
         value: restaurant_ordering
       - key: DB_USER
-        value: restaurant_ordering_user
+        fromDatabase:
+          name: restaurant-db
+          property: user
       - key: DB_PASS
         fromDatabase:
           name: restaurant-db
           property: password
+      - key: DB_PORT
+        value: "5432"
       - key: CLOUDINARY_CLOUD_NAME
-        value: your-cloud-name
+        value: ""
       - key: CLOUDINARY_API_KEY
-        value: your-api-key
+        value: ""
       - key: CLOUDINARY_API_SECRET
-        value: your-api-secret
+        value: ""
 
-  - type: pserv
-    name: restaurant-db
-    env: postgresql
+databases:
+  - name: restaurant-db
     plan: free
     databaseName: restaurant_ordering
-    databaseUser: restaurant_ordering_user
+    user: restaurant_ordering_user
