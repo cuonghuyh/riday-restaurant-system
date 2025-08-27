@@ -1,0 +1,26 @@
+backend/api/auth.php:
+
+<?php
+header('Content-Type: application/json');
+
+require_once '../controllers/AuthController.php';
+
+$authController = new AuthController();
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+switch ($method) {
+    case 'POST':
+        if (isset($_GET['action']) && $_GET['action'] === 'login') {
+            $authController->login();
+        } elseif (isset($_GET['action']) && $_GET['action'] === 'register') {
+            $authController->register();
+        } else {
+            echo json_encode(['message' => 'Invalid action']);
+        }
+        break;
+
+    default:
+        echo json_encode(['message' => 'Method not allowed']);
+        break;
+}
