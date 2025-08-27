@@ -2,12 +2,6 @@
 $controller = $_GET['controller'] ?? 'restaurant'; // Default to restaurant home page
 $action = $_GET['action'] ?? 'home';
 
-// QR Generator route
-if (isset($_GET['qr_generator']) || $controller === 'qr') {
-    include 'qr_generator.php';
-    exit;
-}
-
 switch ($controller) {
     case 'restaurant':
         require_once 'controllers/RestaurantController.php';
@@ -23,13 +17,41 @@ switch ($controller) {
         }
         break;
 
+    case 'auth':
+        require_once 'controllers/AuthController.php';
+        $ctrl = new AuthController();
+        switch ($action) {
+            case 'login':
+                $ctrl->login();
+                break;
+            case 'authenticate':
+                $ctrl->authenticate();
+                break;
+            case 'logout':
+                $ctrl->logout();
+                break;
+            default:
+                $ctrl->login();
+        }
+        break;
+
     case 'riday':
+        // Require authentication for dashboard
+        require_once 'controllers/AuthController.php';
+        $authCtrl = new AuthController();
+        $authCtrl->requireAuth('?controller=auth&action=login');
+        
         require_once 'controllers/RestaurantController.php';
         $ctrl = new RestaurantController();
         $ctrl->ridayDashboard();
         break;
 
     case 'admin':
+        // Require authentication for admin actions
+        require_once 'controllers/AuthController.php';
+        $authCtrl = new AuthController();
+        $authCtrl->requireAuth('?controller=auth&action=login');
+        
         require_once 'controllers/AdminController.php';
         $ctrl = new AdminController();
         switch ($action) {
@@ -59,6 +81,12 @@ switch ($controller) {
                 break;
             case 'testCloudinary':
                 $ctrl->testCloudinary();
+                break;
+            case 'cleanupInvalidImage':
+                $ctrl->cleanupInvalidImage();
+                break;
+            case 'clearBrokenImage':
+                $ctrl->clearBrokenImage();
                 break;
             default:
                 $ctrl->index();
@@ -111,6 +139,44 @@ switch ($controller) {
                 break;
             case 'getCompletedOrders':
                 $ctrl->getCompletedOrders();
+                break;
+            default:
+                $ctrl->index();
+        }
+        break;
+
+    case 'table':
+        // Require authentication for table management
+        require_once 'controllers/AuthController.php';
+        $authCtrl = new AuthController();
+        $authCtrl->requireAuth('?controller=auth&action=login');
+        
+        require_once 'controllers/TableController.php';
+        $ctrl = new TableController();
+        switch ($action) {
+            case 'index':
+                $ctrl->index();
+                break;
+            case 'getAllTables':
+                $ctrl->getAllTables();
+                break;
+            case 'addTable':
+                $ctrl->addTable();
+                break;
+            case 'updateTable':
+                $ctrl->updateTable();
+                break;
+            case 'deleteTable':
+                $ctrl->deleteTable();
+                break;
+            case 'getTableStats':
+                $ctrl->getTableStats();
+                break;
+            case 'createSampleTables':
+                $ctrl->createSampleTables();
+                break;
+            case 'updateTableStatus':
+                $ctrl->updateTableStatus();
                 break;
             default:
                 $ctrl->index();

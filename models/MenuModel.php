@@ -324,4 +324,9 @@ class MenuModel
             return false;
         }
     }
+
+    public function getLastInsertId()
+    {
+        return $this->db->lastInsertId();
+    }
 }

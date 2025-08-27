@@ -273,7 +273,7 @@
                             Nhân viên
                         </h3>
                         <p class="text-muted mb-4">Truy cập hệ thống quản lý đơn hàng và menu nhà hàng</p>
-                        <a href="index.php?controller=order&action=dashboard" class="action-btn" style="background: linear-gradient(135deg, var(--warning-color), #d97706);">
+                        <a href="?controller=auth&action=login" class="action-btn" style="background: linear-gradient(135deg, var(--warning-color), #d97706);">
                             <i class="bi bi-box-arrow-in-right"></i>
                             Đăng nhập làm việc
                         </a>

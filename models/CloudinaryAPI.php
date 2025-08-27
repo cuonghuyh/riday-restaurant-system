@@ -7,13 +7,24 @@ class CloudinaryAPI {
     private $config;
     
     public function __construct() {
-        $this->config = require_once __DIR__ . '/../config/cloudinary.php';
-        $this->cloudName = $this->config['cloud_name'];
-        $this->apiKey = $this->config['api_key'];
-        $this->apiSecret = $this->config['api_secret'];
+        $configPath = __DIR__ . '/../config/cloudinary.php';
+        
+        if (!file_exists($configPath)) {
+            throw new Exception('Cloudinary config file not found at: ' . $configPath);
+        }
+        
+        $this->config = include $configPath;
+        
+        if (!$this->config || !is_array($this->config)) {
+            throw new Exception('Invalid Cloudinary config file');
+        }
+        
+        $this->cloudName = $this->config['cloud_name'] ?? '';
+        $this->apiKey = $this->config['api_key'] ?? '';
+        $this->apiSecret = $this->config['api_secret'] ?? '';
         
         if (empty($this->cloudName) || empty($this->apiKey) || empty($this->apiSecret)) {
-            throw new Exception('Cloudinary credentials not configured properly');
+            throw new Exception('Cloudinary credentials not configured properly. Please check config/cloudinary.php');
         }
     }
     

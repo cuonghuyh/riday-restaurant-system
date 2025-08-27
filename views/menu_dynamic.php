@@ -1050,6 +1050,8 @@
                         if (!empty($item['image'])) {
                             // Check if it's a Cloudinary URL (starts with http)
                             if (strpos($item['image'], 'http') === 0) {
+                                // For Cloudinary URLs, we'll let the browser handle validation via onerror
+                                // This is more efficient than server-side HTTP requests
                                 $hasValidImage = true;
                                 $imageSrc = $item['image'];
                             } else {
@@ -1067,8 +1069,10 @@
                             <img src="<?= htmlspecialchars($imageSrc) ?>" 
                                  alt="<?= htmlspecialchars($item['name']) ?>" 
                                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 15px;"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="emoji" style="display: none;">🍽️</div>
+                                 onload="handleImageLoad(this)"
+                                 onerror="handleImageError(this, <?= $item['id'] ?>);"
+                                 data-item-id="<?= $item['id'] ?>">
+                            <div class="emoji fallback-emoji" style="display: none;">🍽️</div>
                         <?php else: ?>
                             <div class="emoji">🍽️</div>
                         <?php endif; ?>
@@ -1560,6 +1564,68 @@
                 }
             });
         }
+
+        // Handle image loading errors
+        function handleImageError(imgElement, itemId) {
+            console.log('Image loading failed for item ID:', itemId, 'URL:', imgElement.src);
+            
+            // Hide the broken image and show fallback emoji
+            imgElement.style.display = 'none';
+            const fallbackEmoji = imgElement.nextElementSibling;
+            if (fallbackEmoji && fallbackEmoji.classList.contains('fallback-emoji')) {
+                fallbackEmoji.style.display = 'flex';
+                fallbackEmoji.style.alignItems = 'center';
+                fallbackEmoji.style.justifyContent = 'center';
+                fallbackEmoji.style.fontSize = '2rem';
+            }
+
+            // Send request to server to clean up invalid image URL in database
+            // This helps prevent future attempts to load the broken image
+            fetch('?controller=admin&action=cleanupInvalidImage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    itemId: itemId,
+                    imageUrl: imgElement.src
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Invalid image URL cleaned from database for item', itemId);
+                }
+            }).catch(error => {
+                console.log('Could not clean up invalid image URL:', error);
+            });
+        }
+
+        // Handle successful image loads (for debugging)
+        function handleImageLoad(imgElement) {
+            const itemId = imgElement.getAttribute('data-item-id');
+            console.log('✅ Image loaded successfully for item', itemId);
+        }
+
+        // Set timeout for images that take too long to load
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('img[data-item-id]');
+            images.forEach(img => {
+                const timeout = setTimeout(() => {
+                    if (!img.complete || img.naturalHeight === 0) {
+                        console.log('Image timeout for item', img.getAttribute('data-item-id'));
+                        handleImageError(img, img.getAttribute('data-item-id'));
+                    }
+                }, 10000); // 10 second timeout
+                
+                img.addEventListener('load', () => {
+                    clearTimeout(timeout);
+                });
+                
+                img.addEventListener('error', () => {
+                    clearTimeout(timeout);
+                });
+            });
+        });
     </script>
 </body>
 </html>

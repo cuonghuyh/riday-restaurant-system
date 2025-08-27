@@ -1355,6 +1355,12 @@
                     </div>
                 </div>
                 <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="showTableManagementPage()">
+                        <i class="bi bi-grid-3x3"></i>
+                        <span class="nav-text">Table Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="bi bi-people"></i>
                         <span class="nav-text">Customers</span>
@@ -1435,13 +1441,31 @@
                     <i class="bi bi-gear"></i>
                 </button>
                 
-                <div class="user-menu">
-                    <div class="user-avatar">A</div>
+                <div class="user-menu" onclick="toggleUserDropdown()">
+                    <div class="user-avatar"><?= strtoupper(substr($_SESSION['name'] ?? $_SESSION['username'] ?? 'U', 0, 1)) ?></div>
                     <div class="user-info">
-                        <h6>Admin User</h6>
-                        <span>Restaurant Manager</span>
+                        <h6><?= htmlspecialchars($_SESSION['name'] ?? $_SESSION['username'] ?? 'User') ?></h6>
+                        <span><?= ucfirst($_SESSION['role'] ?? 'user') ?> - Restaurant System</span>
                     </div>
                     <i class="bi bi-chevron-down"></i>
+                </div>
+                
+                <!-- User Dropdown Menu -->
+                <div class="user-dropdown" id="userDropdown" style="display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 200px; z-index: 1000; padding: 0.5rem 0;">
+                    <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; color: var(--text-dark);"><?= htmlspecialchars($_SESSION['name'] ?? $_SESSION['username'] ?? 'User') ?></div>
+                        <small style="color: var(--text-light);"><?= htmlspecialchars($_SESSION['username'] ?? '') ?></small>
+                    </div>
+                    <a href="#" onclick="showUserProfile()" style="display: block; padding: 0.75rem 1rem; color: var(--text-dark); text-decoration: none; transition: all 0.2s ease;">
+                        <i class="bi bi-person-circle me-2"></i>Thông tin cá nhân
+                    </a>
+                    <a href="#" onclick="showSettings()" style="display: block; padding: 0.75rem 1rem; color: var(--text-dark); text-decoration: none; transition: all 0.2s ease;">
+                        <i class="bi bi-gear me-2"></i>Cài đặt
+                    </a>
+                    <hr style="margin: 0.5rem 0; border-color: var(--border-color);">
+                    <a href="?controller=auth&action=logout" style="display: block; padding: 0.75rem 1rem; color: var(--danger-color); text-decoration: none; transition: all 0.2s ease;">
+                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                    </a>
                 </div>
             </div>
         </div>
@@ -1779,6 +1803,112 @@
                     <!-- Orders Container for card view -->
                     <div id="ordersContainer" style="display: none;">
                         <!-- Orders cards will be displayed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Management Page -->
+            <div id="tableManagementPage" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title"><i class="bi bi-grid-3x3"></i> Table Management</h1>
+                    <p class="page-subtitle">Quản lý bàn ăn trong nhà hàng</p>
+                </div>
+                
+                <!-- Table Stats Row -->
+                <div class="stats-grid mb-4">
+                    <div class="stat-card primary">
+                        <div class="stat-header">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-grid-3x3"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number" id="totalTables">0</div>
+                        <div class="stat-label">Tổng số bàn</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-header">
+                            <div class="stat-icon success">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number" id="availableTables">0</div>
+                        <div class="stat-label">Bàn trống</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-header">
+                            <div class="stat-icon danger">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number" id="occupiedTables">0</div>
+                        <div class="stat-label">Bàn có khách</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-tools"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number" id="maintenanceTables">0</div>
+                        <div class="stat-label">Bảo trì</div>
+                    </div>
+                </div>
+
+                <!-- Table Controls -->
+                <div class="quick-actions mb-4">
+                    <button class="action-btn" onclick="showAddTableModal()">
+                        <i class="bi bi-plus-circle"></i> Thêm bàn mới
+                    </button>
+                    <button class="action-btn secondary" onclick="loadTables()">
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới
+                    </button>
+                    <button class="action-btn secondary" onclick="createSampleTables()">
+                        <i class="bi bi-grid"></i> Tạo bàn mẫu
+                    </button>
+                    <div class="d-flex gap-2 ms-auto">
+                        <select class="form-select" id="tableStatusFilter" onchange="filterTables()" style="width: 150px; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="available">Bàn trống</option>
+                            <option value="occupied">Có khách</option>
+                            <option value="reserved">Đã đặt</option>
+                            <option value="maintenance">Bảo trì</option>
+                        </select>
+                        <input type="text" class="form-control" id="tableSearchInput" placeholder="Tìm bàn..." onkeyup="searchTables()" style="width: 200px; background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                    </div>
+                </div>
+
+                <!-- Tables Grid -->
+                <div class="chart-card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Danh sách bàn</h3>
+                            <p class="card-subtitle">Quản lý và cập nhật trạng thái bàn</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Table Cards Grid -->
+                    <div class="row" id="tablesGrid">
+                        <!-- Table cards will be loaded here -->
+                    </div>
+                    
+                    <!-- Tables Table View (Alternative) -->
+                    <div class="table-responsive" id="tablesTableView" style="display: none;">
+                        <table class="table" style="color: var(--text-light);">
+                            <thead style="background: var(--dark-bg);">
+                                <tr>
+                                    <th>Số bàn</th>
+                                    <th>Tên bàn</th>
+                                    <th>Số chỗ</th>
+                                    <th>Vị trí</th>
+                                    <th>Trạng thái</th>
+                                    <th>QR Code</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablesTableBody">
+                                <!-- Tables will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -2148,6 +2278,101 @@
         </div>
     </div>
 
+    <!-- Add Table Modal -->
+    <div class="modal fade" id="addTableModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title" style="color: var(--text-light);">
+                        <i class="bi bi-plus-circle"></i> Thêm bàn mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTableForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" style="color: var(--text-light);">Số bàn *</label>
+                                <input type="number" class="form-control" id="addTableNumber" required min="1" max="999" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" style="color: var(--text-light);">Số chỗ ngồi</label>
+                                <input type="number" class="form-control" id="addTableCapacity" value="4" min="1" max="20" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-light);">Vị trí</label>
+                            <input type="text" class="form-control" id="addTableLocation" placeholder="VD: Tầng 1 - Cửa sổ" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-light);">Trạng thái</label>
+                            <select class="form-select" id="addTableStatus" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                                <option value="available">Bàn trống</option>
+                                <option value="occupied">Có khách</option>
+                                <option value="reserved">Đã đặt trước</option>
+                                <option value="maintenance">Bảo trì</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="action-btn" onclick="addTable()">
+                        <i class="bi bi-check"></i> Thêm bàn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Table Modal -->
+    <div class="modal fade" id="editTableModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title" style="color: var(--text-light);">
+                        <i class="bi bi-pencil"></i> Chỉnh sửa bàn
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTableForm">
+                        <input type="hidden" id="editTableId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" style="color: var(--text-light);">Số bàn *</label>
+                                <input type="number" class="form-control" id="editTableNumber" required min="1" max="999" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" style="color: var(--text-light);">Số chỗ ngồi</label>
+                                <input type="number" class="form-control" id="editTableCapacity" min="1" max="20" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-light);">Vị trí</label>
+                            <input type="text" class="form-control" id="editTableLocation" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-light);">Trạng thái</label>
+                            <select class="form-select" id="editTableStatus" style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light);">
+                                <option value="available">Bàn trống</option>
+                                <option value="occupied">Có khách</option>
+                                <option value="reserved">Đã đặt trước</option>
+                                <option value="maintenance">Bảo trì</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="action-btn" onclick="updateTable()">
+                        <i class="bi bi-check"></i> Cập nhật
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Auto-refresh Indicator -->
     <div class="auto-refresh-indicator" id="autoRefreshIndicator">
         <i class="bi bi-arrow-clockwise refresh-icon"></i>
@@ -2185,6 +2410,11 @@
             
             // Load recent activity
             loadRecentActivity();
+            
+            // ⭐ Đảm bảo auto-refresh chạy để cập nhật badge real-time
+            if (!autoRefreshInterval) {
+                startAutoRefresh();
+            }
         }
 
         function showAddMenuPage() {
@@ -2197,12 +2427,29 @@
         }
 
         function showMenuListPage() {
+            console.log('showMenuListPage called');
             document.getElementById('dashboardPage').style.display = 'none';
             document.getElementById('addMenuPage').style.display = 'none';
             document.getElementById('menuListPage').style.display = 'block';
             document.getElementById('ordersPage').style.display = 'none';
             updateNavActive('menuList');
+            
+            // Always reload menu items when showing menu list page
+            console.log('Refreshing menu items for menu list page');
             loadMenuItems();
+        }
+
+        function showTableManagementPage() {
+            document.getElementById('dashboardPage').style.display = 'none';
+            document.getElementById('addMenuPage').style.display = 'none';
+            document.getElementById('menuListPage').style.display = 'none';
+            document.getElementById('ordersPage').style.display = 'none';
+            document.getElementById('tableManagementPage').style.display = 'block';
+            updateNavActive('tables');
+            
+            // Load tables data
+            loadTables();
+            loadTableStats();
         }
 
         function showOrdersPage() {
@@ -2253,6 +2500,8 @@
                 document.querySelector('a[onclick="showMenuListPage()"]').classList.add('active');
             } else if (page === 'orders') {
                 document.querySelector('a[onclick="showOrdersPage()"]').classList.add('active');
+            } else if (page === 'tables') {
+                document.querySelector('a[onclick="showTableManagementPage()"]').classList.add('active');
             }
         }
 
@@ -2264,10 +2513,6 @@
                 
                 if (data.success) {
                     menuItems = data.menuItems;
-                    
-                    // Auto-validate images after loading
-                    await validateBrokenImages();
-                    
                     filteredMenuItems = [...menuItems];
                     updateMenuStats();
                     renderMenuTable();
@@ -2331,13 +2576,18 @@
                     if (item.image.includes('cloudinary.com') || item.image.includes('http')) {
                         // Full Cloudinary URL - dùng trực tiếp
                         imageSrc = item.image;
+                        console.log('🌐 Using Cloudinary URL for', item.name, ':', imageSrc);
                     } else if (item.image.startsWith('restaurant/menu/') || item.image.startsWith('menu_item_')) {
                         // Cloudinary public_id - tạo URL với thumbnail size
                         imageSrc = `https://res.cloudinary.com/dx9ngssmo/image/upload/c_fill,w_60,h_60,f_auto,q_auto/${item.image}`;
+                        console.log('🔧 Built Cloudinary URL for', item.name, ':', imageSrc);
                     } else {
                         // Local path fallback (nếu còn data cũ)
                         imageSrc = `assets/${item.image}`;
+                        console.log('📁 Using local path for', item.name, ':', imageSrc);
                     }
+                } else {
+                    console.log('📷 No image for', item.name);
                 }
                 
                 const statusBadge = item.status === 'available' 
@@ -2351,7 +2601,10 @@
                         <td>
                             <div class="menu-image-container" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openUploadModal(${item.id}, '${item.name}')">
                                 ${imageSrc ? 
-                                    `<img src="${imageSrc}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                                    `<img src="${imageSrc}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;" 
+                                         onload="console.log('✅ Dashboard image loaded:', '${item.name}', '${imageSrc}');"
+                                         onerror="console.log('❌ Dashboard image failed:', '${item.name}', '${imageSrc}'); this.style.display='none'; this.parentElement.innerHTML='<i class=\\"bi bi-camera text-muted\\"></i><br><small>Broken</small>'; handleBrokenImage(${item.id});"
+                                         data-item-id="${item.id}">` :
                                     '<i class="bi bi-camera text-muted"></i>'
                                 }
                             </div>
@@ -2448,6 +2701,9 @@
                 if (result.success) {
                     console.log('Menu item added successfully:', result);
                     
+                    // Show success notification first
+                    showNotification('success', result.message || 'Thêm món ăn thành công!');
+                    
                     // If there's an image, upload it
                     if (imageFile) {
                         console.log('Image file found, uploading to Cloudinary...');
@@ -2463,15 +2719,13 @@
                             console.error('Could not find newly created menu item');
                         }
                     } else {
-                        console.log('No image file selected');
+                        console.log('No image file selected, loading menu items...');
+                        // Load menu items to refresh the list
+                        await loadMenuItems();
                     }
                     
-                    showNotification('success', result.message);
+                    // Clear form after successful addition
                     clearAddMenuForm();
-                    
-                    if (!imageFile) {
-                        loadMenuItems();
-                    }
                 } else {
                     showNotification('error', result.message);
                 }
@@ -2486,77 +2740,6 @@
                 const submitBtn = document.querySelector('#addMenuPage .action-btn');
                 submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save / Add';
                 submitBtn.disabled = false;
-            }
-        }
-
-        // Auto-validate broken images and clean them from database
-        async function validateBrokenImages() {
-            console.log('Starting image validation...');
-            
-            let brokenCount = 0;
-            const itemsToUpdate = [];
-            
-            for (let item of menuItems) {
-                if (item.image && item.image !== '') {
-                    try {
-                        // Use a promise-based image check
-                        const isImageValid = await new Promise((resolve) => {
-                            const img = new Image();
-                            img.onload = () => resolve(true);
-                            img.onerror = () => resolve(false);
-                            img.src = item.image;
-                            
-                            // Timeout after 3 seconds
-                            setTimeout(() => resolve(false), 3000);
-                        });
-                        
-                        if (!isImageValid) {
-                            console.log(`Broken image detected for item ${item.id}: ${item.name}`);
-                            itemsToUpdate.push(item.id);
-                            brokenCount++;
-                        }
-                    } catch (error) {
-                        console.log(`Error checking image for item ${item.id}:`, error);
-                        itemsToUpdate.push(item.id);
-                        brokenCount++;
-                    }
-                }
-            }
-            
-            // Update database to remove broken image URLs
-            if (itemsToUpdate.length > 0) {
-                try {
-                    const response = await fetch('index.php?controller=admin&action=clearBrokenImages', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            itemIds: itemsToUpdate
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        console.log(`Cleaned ${brokenCount} broken image URLs from database`);
-                        
-                        // Update local menuItems array
-                        menuItems = menuItems.map(item => {
-                            if (itemsToUpdate.includes(item.id)) {
-                                item.image = null;
-                            }
-                            return item;
-                        });
-                        
-                        if (brokenCount > 0) {
-                            showNotification('info', `Cleaned ${brokenCount} broken image${brokenCount > 1 ? 's' : ''}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error cleaning broken images:', error);
-                }
-            } else {
-                console.log('All images are valid');
             }
         }
 
@@ -2887,6 +3070,8 @@
 
         // Show notification
         function showNotification(type, message) {
+            console.log('showNotification called with:', type, message);
+            
             const alertType = type === 'error' ? 'danger' : type;
             const alertHtml = `
                 <div class="alert alert-${alertType} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-light);">
@@ -2897,11 +3082,20 @@
             
             document.body.insertAdjacentHTML('beforeend', alertHtml);
             
+            console.log('Notification HTML added to body');
+            
             // Auto dismiss after 5 seconds
             setTimeout(() => {
                 const alerts = document.querySelectorAll('.alert');
                 if (alerts.length > 0) {
-                    bootstrap.Alert.getOrCreateInstance(alerts[alerts.length - 1]).close();
+                    const latestAlert = alerts[alerts.length - 1];
+                    console.log('Auto-dismissing alert:', latestAlert);
+                    try {
+                        bootstrap.Alert.getOrCreateInstance(latestAlert).close();
+                    } catch (e) {
+                        console.warn('Could not auto-dismiss alert:', e);
+                        latestAlert.remove();
+                    }
                 }
             }, 5000);
         }
@@ -3721,11 +3915,22 @@
             const completedElement = document.getElementById('ordersStatsCompleted');
             const revenueElement = document.getElementById('revenueToday');
             
+            // Update main stats
             if (totalElement) totalElement.textContent = stats.total_orders || 0;
             if (pendingElement) pendingElement.textContent = stats.pending_orders || 0;
             if (preparingElement) preparingElement.textContent = stats.preparing_orders || 0;
             if (completedElement) completedElement.textContent = stats.completed_orders || 0;
             if (revenueElement) revenueElement.textContent = (parseInt(stats.total_revenue) || 0).toLocaleString() + 'đ';
+            
+            // ⭐ CẬP NHẬT BADGE TRONG SIDEBAR
+            const pendingBadge = document.getElementById('pendingOrdersBadge');
+            if (pendingBadge) {
+                const pendingCount = stats.pending_orders || 0;
+                pendingBadge.textContent = pendingCount;
+                // Ẩn badge nếu = 0, hiện nếu > 0
+                pendingBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                console.log('🔔 Badge updated:', pendingCount);
+            }
             
             console.log('Stats updated:', stats);
         }
@@ -3742,6 +3947,9 @@
         }
 
         function checkForUpdates() {
+            // Always update stats to keep badge current
+            loadStatsFromAPI();
+            
             // Check for new orders and update
             fetch(`./index.php?controller=order&action=getNewOrders&since=${lastUpdateTime}`)
                 .then(response => response.json())
@@ -3749,7 +3957,6 @@
                     if (data.success && data.orders.length > 0) {
                         // Có đơn hàng mới - load lại toàn bộ
                         loadOrdersFromAPI();
-                        loadStatsFromAPI();
                         loadRecentActivity(); // Reload recent activity
                         showNotification(`🎉 ${data.orders.length} đơn hàng mới!`, 'success');
                         
@@ -3940,7 +4147,7 @@
         }
 
         // Notification system
-        function showNotification(message, type = 'info') {
+        function showNotificationSecondary(message, type = 'info') {
             // Remove existing notifications
             const existingNotifications = document.querySelectorAll('.custom-notification');
             existingNotifications.forEach(notification => notification.remove());
@@ -4301,7 +4508,7 @@
         }
 
         // Notification function
-        function showNotification(message, type = 'info') {
+        function showNotificationThird(message, type = 'info') {
             // Create notification if it doesn't exist
             let notification = document.querySelector('.notification-toast');
             if (!notification) {
@@ -4529,6 +4736,33 @@
             audio.play().catch(e => console.log('Audio notification failed:', e));
         }
 
+        // Handle broken images - tự động clear URL trong database
+        async function handleBrokenImage(itemId) {
+            try {
+                console.log(`Broken image detected for item ${itemId}, clearing URL...`);
+                
+                const response = await fetch('index.php?controller=admin&action=clearBrokenImage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: itemId })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log(`Cleared broken image URL for item ${itemId}`);
+                    // Update local menuItems array
+                    const item = menuItems.find(i => i.id == itemId);
+                    if (item) item.image = null;
+                } else {
+                    console.error('Failed to clear broken image URL:', result.message);
+                }
+            } catch (error) {
+                console.error('Error clearing broken image:', error);
+            }
+        }
+
         // Stop real-time updates when page is hidden
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
@@ -4538,10 +4772,514 @@
             }
         });
 
+        // User dropdown functions
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showUserProfile() {
+            showNotification('info', 'Trang thông tin cá nhân đang được phát triển');
+            document.getElementById('userDropdown').style.display = 'none';
+        }
+
+        function showSettings() {
+            showNotification('info', 'Trang cài đặt đang được phát triển');
+            document.getElementById('userDropdown').style.display = 'none';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = event.target.closest('.user-menu');
+            const dropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu && dropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
             stopRealTimeUpdates();
         });
+
+        // ===== TABLE MANAGEMENT FUNCTIONS =====
+        
+        let tables = [];
+        let filteredTables = [];
+        
+        // Load all tables from API
+        async function loadTables() {
+            try {
+                const response = await fetch('index.php?controller=table&action=getAllTables');
+                const data = await response.json();
+                
+                if (data.success) {
+                    tables = data.tables;
+                    filteredTables = [...tables];
+                    renderTablesGrid();
+                } else {
+                    showNotification('Không thể tải dữ liệu bàn', 'error');
+                }
+            } catch (error) {
+                console.error('Load tables error:', error);
+                showNotification('Lỗi kết nối: ' + error.message, 'error');
+            }
+        }
+        
+        // Load table statistics
+        async function loadTableStats() {
+            try {
+                const response = await fetch('index.php?controller=table&action=getTableStats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTableStatsDisplay(data.stats);
+                }
+            } catch (error) {
+                console.error('Load table stats error:', error);
+            }
+        }
+        
+        // Update table statistics display
+        function updateTableStatsDisplay(stats) {
+            document.getElementById('totalTables').textContent = stats.total || 0;
+            document.getElementById('availableTables').textContent = stats.available || 0;
+            document.getElementById('occupiedTables').textContent = stats.occupied || 0;
+            document.getElementById('maintenanceTables').textContent = stats.maintenance || 0;
+        }
+        
+        // Render tables as cards grid
+        function renderTablesGrid() {
+            const container = document.getElementById('tablesGrid');
+            
+            if (!filteredTables || filteredTables.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="bi bi-grid-3x3" style="font-size: 3rem; color: var(--text-muted);"></i>
+                            <p class="text-muted mt-3">Chưa có bàn nào</p>
+                            <button class="action-btn" onclick="showAddTableModal()">
+                                <i class="bi bi-plus"></i> Thêm bàn đầu tiên
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filteredTables.forEach(table => {
+                const statusClass = getTableStatusClass(table.status);
+                const statusIcon = getTableStatusIcon(table.status);
+                const statusText = getTableStatusText(table.status);
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 col-xl-3 mb-4">
+                        <div class="card table-card ${statusClass}" style="background: var(--card-bg); border: 1px solid var(--border-color); transition: all 0.3s ease;" 
+                             data-table-id="${table.id}" data-status="${table.status}">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="background: var(--dark-bg); border-bottom: 1px solid var(--border-color);">
+                                <h6 class="mb-0" style="color: var(--text-light);">
+                                    <i class="bi bi-table"></i> ${table.name || 'Bàn ' + table.table_number}
+                                </h6>
+                                <span class="badge ${statusClass}" style="font-size: 0.7rem;">
+                                    ${statusIcon} ${statusText}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong style="color: var(--text-light);">Số bàn:</strong> 
+                                    <span style="color: var(--text-light);">${table.table_number}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <strong style="color: var(--text-light);">Sức chứa:</strong> 
+                                    <span style="color: var(--text-light);">${table.capacity || 4} người</span>
+                                </div>
+                                ${table.location ? `
+                                <div class="mb-2">
+                                    <strong style="color: var(--text-light);">Vị trí:</strong> 
+                                    <span style="color: var(--text-muted);">${table.location}</span>
+                                </div>
+                                ` : ''}
+                                <div class="mb-3">
+                                    <strong style="color: var(--text-light);">QR Code:</strong> 
+                                    <code style="color: var(--info-color); font-size: 0.8rem;">${table.qr_code}</code>
+                                </div>
+                                
+                                <!-- Quick Status Change -->
+                                <div class="mb-3">
+                                    <label style="color: var(--text-muted); font-size: 0.8rem;">Thay đổi trạng thái:</label>
+                                    <select class="form-select form-select-sm" onchange="quickUpdateTableStatus(${table.table_number}, this.value)" 
+                                            style="background: var(--dark-bg); border: 1px solid var(--border-color); color: var(--text-light); font-size: 0.8rem;">
+                                        <option value="available" ${table.status === 'available' ? 'selected' : ''}>🟢 Trống</option>
+                                        <option value="occupied" ${table.status === 'occupied' ? 'selected' : ''}>🔴 Có khách</option>
+                                        <option value="reserved" ${table.status === 'reserved' ? 'selected' : ''}>🟡 Đã đặt</option>
+                                        <option value="maintenance" ${table.status === 'maintenance' ? 'selected' : ''}>⚙️ Bảo trì</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="editTable(${table.id})" title="Chỉnh sửa">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="viewTableQR('${table.qr_code}')" title="Xem QR">
+                                        <i class="bi bi-qr-code"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteTable(${table.id}, '${table.name || 'Bàn ' + table.table_number}')" title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Get table status CSS class
+        function getTableStatusClass(status) {
+            switch (status) {
+                case 'available': return 'status-available';
+                case 'occupied': return 'status-occupied';
+                case 'reserved': return 'status-reserved';
+                case 'maintenance': return 'status-maintenance';
+                default: return 'status-available';
+            }
+        }
+        
+        // Get table status icon
+        function getTableStatusIcon(status) {
+            switch (status) {
+                case 'available': return '🟢';
+                case 'occupied': return '🔴';
+                case 'reserved': return '🟡';
+                case 'maintenance': return '⚙️';
+                default: return '🟢';
+            }
+        }
+        
+        // Get table status text
+        function getTableStatusText(status) {
+            switch (status) {
+                case 'available': return 'Trống';
+                case 'occupied': return 'Có khách';
+                case 'reserved': return 'Đã đặt';
+                case 'maintenance': return 'Bảo trì';
+                default: return 'Trống';
+            }
+        }
+        
+        // Show add table modal
+        function showAddTableModal() {
+            document.getElementById('addTableForm').reset();
+            // Auto-suggest next table number
+            const maxTableNumber = tables.length > 0 ? Math.max(...tables.map(t => t.table_number)) : 0;
+            document.getElementById('addTableNumber').value = maxTableNumber + 1;
+            
+            new bootstrap.Modal(document.getElementById('addTableModal')).show();
+        }
+        
+        // Add new table
+        async function addTable() {
+            const tableNumber = parseInt(document.getElementById('addTableNumber').value);
+            const capacity = parseInt(document.getElementById('addTableCapacity').value);
+            const location = document.getElementById('addTableLocation').value.trim();
+            const status = document.getElementById('addTableStatus').value;
+            
+            if (!tableNumber || tableNumber <= 0) {
+                showNotification('Vui lòng nhập số bàn hợp lệ', 'warning');
+                return;
+            }
+            
+            if (!capacity || capacity <= 0 || capacity > 20) {
+                showNotification('Số chỗ ngồi phải từ 1-20', 'warning');
+                return;
+            }
+            
+            try {
+                const submitBtn = document.querySelector('#addTableModal .action-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Đang thêm...';
+                submitBtn.disabled = true;
+                
+                const response = await fetch('index.php?controller=table&action=addTable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        table_number: tableNumber,
+                        capacity: capacity,
+                        location: location,
+                        status: status
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addTableModal')).hide();
+                    loadTables();
+                    loadTableStats();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+                
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Add table error:', error);
+                showNotification('Lỗi kết nối: ' + error.message, 'error');
+                
+                const submitBtn = document.querySelector('#addTableModal .action-btn');
+                submitBtn.innerHTML = '<i class="bi bi-check"></i> Thêm bàn';
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Edit table
+        function editTable(tableId) {
+            const table = tables.find(t => t.id == tableId);
+            if (!table) return;
+            
+            document.getElementById('editTableId').value = table.id;
+            document.getElementById('editTableNumber').value = table.table_number;
+            document.getElementById('editTableCapacity').value = table.capacity || 4;
+            document.getElementById('editTableLocation').value = table.location || '';
+            document.getElementById('editTableStatus').value = table.status;
+            
+            new bootstrap.Modal(document.getElementById('editTableModal')).show();
+        }
+        
+        // Update table
+        async function updateTable() {
+            const id = parseInt(document.getElementById('editTableId').value);
+            const tableNumber = parseInt(document.getElementById('editTableNumber').value);
+            const capacity = parseInt(document.getElementById('editTableCapacity').value);
+            const location = document.getElementById('editTableLocation').value.trim();
+            const status = document.getElementById('editTableStatus').value;
+            
+            if (!tableNumber || tableNumber <= 0) {
+                showNotification('Vui lòng nhập số bàn hợp lệ', 'warning');
+                return;
+            }
+            
+            if (!capacity || capacity <= 0 || capacity > 20) {
+                showNotification('Số chỗ ngồi phải từ 1-20', 'warning');
+                return;
+            }
+            
+            try {
+                const submitBtn = document.querySelector('#editTableModal .action-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Đang cập nhật...';
+                submitBtn.disabled = true;
+                
+                const response = await fetch('index.php?controller=table&action=updateTable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        table_number: tableNumber,
+                        capacity: capacity,
+                        location: location,
+                        status: status
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('editTableModal')).hide();
+                    loadTables();
+                    loadTableStats();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+                
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Update table error:', error);
+                showNotification('Lỗi kết nối: ' + error.message, 'error');
+                
+                const submitBtn = document.querySelector('#editTableModal .action-btn');
+                submitBtn.innerHTML = '<i class="bi bi-check"></i> Cập nhật';
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Delete table
+        async function deleteTable(tableId, tableName) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa "${tableName}"?\n\nHành động này không thể hoàn tác.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('index.php?controller=table&action=deleteTable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: tableId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    loadTables();
+                    loadTableStats();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Delete table error:', error);
+                showNotification('Lỗi kết nối: ' + error.message, 'error');
+            }
+        }
+        
+        // Quick update table status
+        async function quickUpdateTableStatus(tableNumber, newStatus) {
+            try {
+                const response = await fetch('index.php?controller=table&action=updateTableStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        table_number: tableNumber,
+                        status: newStatus
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    loadTables();
+                    loadTableStats();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Quick update status error:', error);
+                showNotification('Lỗi cập nhật trạng thái', 'error');
+            }
+        }
+        
+        // Create sample tables
+        async function createSampleTables() {
+            if (!confirm('Tạo 8 bàn mẫu để demo?\n\nCác bàn sẽ được tạo với số từ cao nhất hiện có + 1.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('index.php?controller=table&action=createSampleTables');
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    loadTables();
+                    loadTableStats();
+                } else {
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Create sample tables error:', error);
+                showNotification('Lỗi tạo bàn mẫu', 'error');
+            }
+        }
+        
+        // Filter tables by status
+        function filterTables() {
+            const filterValue = document.getElementById('tableStatusFilter').value;
+            const searchValue = document.getElementById('tableSearchInput').value.toLowerCase();
+            
+            filteredTables = tables.filter(table => {
+                const matchesStatus = !filterValue || table.status === filterValue;
+                const matchesSearch = !searchValue || 
+                    table.name.toLowerCase().includes(searchValue) ||
+                    table.table_number.toString().includes(searchValue) ||
+                    (table.location && table.location.toLowerCase().includes(searchValue));
+                    
+                return matchesStatus && matchesSearch;
+            });
+            
+            renderTablesGrid();
+        }
+        
+        // Search tables
+        function searchTables() {
+            filterTables(); // Reuse filter function
+        }
+        
+        // View QR code
+        function viewTableQR(qrCode) {
+            showNotification(`QR Code: ${qrCode}`, 'info');
+            // TODO: Show QR code image in modal
+        }
+        
+        // Add custom CSS for table cards
+        if (!document.getElementById('tableManagementStyles')) {
+            const style = document.createElement('style');
+            style.id = 'tableManagementStyles';
+            style.textContent = `
+                .table-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                }
+                
+                .status-available {
+                    border-left: 4px solid var(--success-color) !important;
+                }
+                
+                .status-occupied {
+                    border-left: 4px solid var(--danger-color) !important;
+                }
+                
+                .status-reserved {
+                    border-left: 4px solid var(--warning-color) !important;
+                }
+                
+                .status-maintenance {
+                    border-left: 4px solid var(--text-muted) !important;
+                    opacity: 0.8;
+                }
+                
+                .badge.status-available {
+                    background: var(--success-color) !important;
+                    color: white !important;
+                }
+                
+                .badge.status-occupied {
+                    background: var(--danger-color) !important;
+                    color: white !important;
+                }
+                
+                .badge.status-reserved {
+                    background: var(--warning-color) !important;
+                    color: white !important;
+                }
+                
+                .badge.status-maintenance {
+                    background: var(--text-muted) !important;
+                    color: white !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
     </script>
 </body>
 </html>

@@ -9,6 +9,13 @@
  */
 
 return [
+    // Set to false to disable Cloudinary upload for development
+    'use_cloudinary' => true, // Change to true when ready for production
+    
+    // Local storage settings
+    'local_upload_dir' => 'assets/images/',
+    'local_upload_url' => 'images/',
+    
     // Thay thế bằng thông tin thực từ Cloudinary Dashboard
     'cloud_name' => getenv('CLOUDINARY_CLOUD_NAME') ?: 'dx9ngssmo', // Ví dụ: 'my-restaurant'
     'api_key' => getenv('CLOUDINARY_API_KEY') ?: '736777414926498', // Ví dụ: '123456789012345'
