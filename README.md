@@ -14,36 +14,35 @@ Modern restaurant ordering system with beautiful Riday admin dashboard, real-tim
 
 ## 🚀 Live Demo
 
-**Admin Dashboard:** [https://your-app.render.com/index.php?controller=restaurant&action=ridayDashboard](https://your-app.render.com/index.php?controller=restaurant&action=ridayDashboard)
+**Admin Dashboard:** [https://ridayrestaurant.byethost7.com/?controller=auth&action=login](https://ridayrestaurant.byethost7.com/?controller=auth&action=login)
 
-**Customer Menu:** [https://your-app.render.com/index.php?controller=restaurant&action=menu](https://your-app.render.com/index.php?controller=restaurant&action=menu)
+**Customer Menu:** [https://ridayrestaurant.byethost7.com/index.php?controller=restaurant&action=menu](https://ridayrestaurant.byethost7.com/index.php?controller=restaurant&action=menu)
 
 ## 🛠️ Tech Stack
 
 - **Backend:** PHP 8.1+, PDO
-- **Database:** PostgreSQL (Render) / MySQL (Local)
+- **Database:** MySQL (ByetHost / Local)
 - **Frontend:** Bootstrap 5.3, Vanilla JS
 - **Images:** Cloudinary API
-- **Deployment:** Render.com
+- **Deployment:** ByetHost (recommended)
 
-## 📦 Quick Deploy to Render
+## 📦 Quick Deploy to ByetHost
 
-1. **Fork this repository**
-2. **Connect to Render:**
-   - Go to [Render.com](https://render.com)
-   - Create new Web Service
-   - Connect your GitHub repository
-   - Render will auto-detect PHP and use `render.yaml` config
-
-3. **Add Environment Variables in Render Dashboard:**
-   ```
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   ```
-
-4. **Database will be auto-created** via `render.yaml`
-5. **Deploy!** - Render will automatically run migrations
+1. **Fork or download this repository**
+2. **Create a free hosting account on ByetHost:**
+   - Visit https://byet.host and sign up for a free hosting account
+3. **Create a MySQL database in the ByetHost control panel:**
+   - Note the provided DB host, DB name, username and password
+4. **Upload project files:**
+   - Use FTP (FileZilla) or the ByetHost File Manager to upload the repository files to your account's web root (e.g. `htdocs` or `public_html`)
+5. **Configure database credentials:**
+   - Edit `config.php` and set the `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` values (or use environment variables if your host supports them)
+6. **Import database schema:**
+   - Use phpMyAdmin (available in ByetHost control panel) to import `restaurant_ordering.sql` or run the provided migration script
+7. **Verify PHP version and permissions:**
+   - Ensure PHP >= 8.1 is selected in the control panel and `uploads/` is writable
+8. **Visit your site:**
+   - Open the ByetHost URL assigned to your account or your custom domain
 
 ## 🔧 Local Development
 
@@ -75,7 +74,7 @@ Modern restaurant ordering system with beautiful Riday admin dashboard, real-tim
 
 5. **Access application:**
    - Customer Menu: http://localhost:8000/index.php?controller=restaurant&action=menu
-   - Admin Dashboard: http://localhost:8000/index.php?controller=restaurant&action=ridayDashboard
+   - Admin Dashboard: https://ridayrestaurant.byethost7.com/?controller=auth&action=login
 
 ## 📁 Project Structure
 
@@ -223,21 +222,27 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-### Database (Auto-configured on Render):
+### Database (ByetHost / MySQL example):
 ```env
-DATABASE_URL=postgres://user:pass@host:port/dbname
+DB_HOST=sql110.byethost7.com
+DB_NAME=b7_39805051_restaurant_ordering
+DB_USER=b7_39805051
+DB_PASS=your_db_password
 ```
 
 ## 🚀 Deployment
 
-### Render.com (Recommended)
-1. Connect GitHub repository
-2. Set environment variables
-3. Deploy automatically
+### ByetHost (Recommended)
+1. Create a ByetHost account at https://byet.host
+2. Create a MySQL database from the control panel and note credentials
+3. Upload the project files to your account's web root using FTP or File Manager
+4. Update `config.php` (or environment variables) with your DB credentials
+5. Import `restaurant_ordering.sql` via phpMyAdmin
+6. Select PHP >= 8.1 and test the site URL provided by ByetHost
 
 ### Other Platforms
 - See `DEPLOYMENT_GUIDE.md` for detailed instructions
-- Supports any PHP hosting with database
+- Supports any PHP hosting with a MySQL database
 
 ## 🤝 Contributing
 
