@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: restaurant-ordering-system
-    env: php
-    buildCommand: composer install --no-dev --optimize-autoloader
-    startCommand: php -S 0.0.0.0:$PORT -t .
+    name: riday-restaurant-system
+    env: docker
+    plan: free
+    healthCheckPath: /
     envVars:
       - key: PHP_VERSION
-        value: 8.1
-    plan: free
+        value: 8.2
+      - key: ENVIRONMENT  
+        value: production
