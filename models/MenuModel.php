@@ -6,9 +6,6 @@ class MenuModel
 {
     /** @var PDO */
     private $db;
-    
-    /** @var array Cache cho image validation */
-    private static $imageValidationCache = [];
 
     public function __construct()
     {
@@ -20,10 +17,28 @@ class MenuModel
         try {
             $stmt = $this->db->prepare('SELECT * FROM categories WHERE status = :status ORDER BY display_order, name');
             $stmt->execute([':status' => 'active']);
-            return $stmt->fetchAll();
+            $categories = $stmt->fetchAll();
+            
+            if (empty($categories)) {
+                // Fallback categories nếu chưa có data
+                return [
+                    ['id' => 1, 'name' => 'Khai vị', 'icon' => '🥟'],
+                    ['id' => 2, 'name' => 'Món chính', 'icon' => '🍜'],
+                    ['id' => 3, 'name' => 'Tráng miệng', 'icon' => '🍮'],
+                    ['id' => 4, 'name' => 'Đồ uống', 'icon' => '🥤']
+                ];
+            }
+            
+            return $categories;
         } catch (Exception $e) {
             error_log('MenuModel::getCategories error: ' . $e->getMessage());
-            return [];
+            // Fallback categories nếu chưa có bảng categories
+            return [
+                ['id' => 1, 'name' => 'Khai vị', 'icon' => '🥟'],
+                ['id' => 2, 'name' => 'Món chính', 'icon' => '🍜'],
+                ['id' => 3, 'name' => 'Tráng miệng', 'icon' => '🍮'],
+                ['id' => 4, 'name' => 'Đồ uống', 'icon' => '🥤']
+            ];
         }
     }
     
@@ -45,16 +60,45 @@ class MenuModel
                                           ORDER BY c.display_order, m.name');
                 $stmt->execute([':status' => 'available']);
             }
-            
-            $items = $stmt->fetchAll();
-            
-            // Auto-validate and clean broken image URLs
-            $this->validateAndCleanImages($items);
-            
-            return $items;
+            return $stmt->fetchAll();
         } catch (Exception $e) {
             error_log('MenuModel::getMenuItems error: ' . $e->getMessage());
-            return [];
+            // Fallback to hardcoded data if database fails
+            return [
+                [
+                    'id' => 1,
+                    'name' => 'Ramen Tonkotsu',
+                    'price' => 85000,
+                    'description' => 'Ramen nước dùng xương heo đậm đà',
+                    'image' => '',
+                    'status' => 'available',
+                    'category_id' => 2,
+                    'category_name' => 'Món chính',
+                    'category_icon' => '🍜'
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Gyoza',
+                    'price' => 45000,
+                    'description' => 'Bánh bao chiên nhân thịt (6 cái)',
+                    'image' => '',
+                    'status' => 'available',
+                    'category_id' => 1,
+                    'category_name' => 'Khai vị',
+                    'category_icon' => '🥟'
+                ],
+                [
+                    'id' => 3,
+                    'name' => 'Sushi Set',
+                    'price' => 120000,
+                    'description' => 'Set sushi tuyển chọn',
+                    'image' => '',
+                    'status' => 'available',
+                    'category_id' => 2,
+                    'category_name' => 'Món chính',
+                    'category_icon' => '🍜'
+                ]
+            ];
         }
     }
 
@@ -190,6 +234,20 @@ class MenuModel
         }
     }
     
+    public function canDeleteMenuItem($id)
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT COUNT(*) as count FROM order_items WHERE menu_item_id = :id');
+            $stmt->execute([':id' => $id]);
+            $result = $stmt->fetch();
+            
+            return $result['count'] == 0;
+        } catch (Exception $e) {
+            error_log('MenuModel::canDeleteMenuItem error: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
     public function addMenuItem($name, $description, $price, $imagePath = null)
     {
         try {
@@ -252,62 +310,5 @@ class MenuModel
         
         // Cloudinary public_id thường không có extension
         return !preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $imagePath);
-    }
-    
-    /**
-     * Validate và clean broken image URLs
-     * 
-     * @param array &$items Reference to items array
-     */
-    private function validateAndCleanImages(&$items) {
-        foreach ($items as &$item) {
-            if (!empty($item['image'])) {
-                $imageUrl = $item['image'];
-                
-                // Check cache first
-                if (isset(self::$imageValidationCache[$imageUrl])) {
-                    $isAccessible = self::$imageValidationCache[$imageUrl];
-                } else {
-                    // Check if image URL is accessible
-                    $headers = @get_headers($imageUrl, 1);
-                    $isAccessible = $headers && (
-                        strpos($headers[0], '200') !== false || 
-                        strpos($headers[0], '301') !== false || 
-                        strpos($headers[0], '302') !== false
-                    );
-                    
-                    // Cache result for 5 minutes
-                    self::$imageValidationCache[$imageUrl] = $isAccessible;
-                }
-                
-                if (!$isAccessible) {
-                    // Image is broken, clear it from database
-                    $this->clearBrokenImageUrl($item['id']);
-                    $item['image'] = null; // Also clear in current result
-                    error_log("Auto-cleared broken image URL for menu item ID: {$item['id']} - URL: {$imageUrl}");
-                }
-            }
-        }
-    }
-    
-    /**
-     * Clear broken image URL from database
-     * 
-     * @param int $itemId
-     */
-    private function clearBrokenImageUrl($itemId) {
-        try {
-            $stmt = $this->db->prepare('UPDATE menu_items SET image = NULL WHERE id = ?');
-            $stmt->execute([$itemId]);
-        } catch (Exception $e) {
-            error_log('Error clearing broken image URL: ' . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Clear image validation cache (gọi định kỳ để tránh memory leak)
-     */
-    public static function clearImageValidationCache() {
-        self::$imageValidationCache = [];
     }
 }

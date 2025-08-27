@@ -817,12 +817,6 @@
             opacity: 0.6;
         }
 
-        .sound-button.sound-active {
-            background: rgba(var(--primary-rgb), 0.2);
-            transform: scale(1.1);
-            transition: all 0.3s ease;
-        }
-
         .sound-wave {
             position: absolute;
             top: 50%;
@@ -833,7 +827,6 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             animation: soundWave 1s ease-out;
-            pointer-events: none;
         }
 
         @keyframes soundWave {
@@ -1428,13 +1421,14 @@
                     <i class="bi bi-moon-fill" id="themeIcon"></i>
                 </button>
                 
-                <button class="notification-icon" id="soundButton" onclick="toggleSound()" title="Toggle sound notifications">
+                <button class="notification-icon" id="soundButton" onclick="toggleSound()">
                     <i class="bi bi-volume-up" id="soundIcon"></i>
                     <div class="notification-badge"></div>
                 </button>
                 
-                <button class="notification-icon" onclick="testSound()" title="Test notification sound">
-                    <i class="bi bi-music-note"></i>
+                <button class="notification-icon">
+                    <i class="bi bi-bell"></i>
+                    <div class="notification-badge"></div>
                 </button>
                 
                 <button class="settings-icon">
@@ -2270,6 +2264,10 @@
                 
                 if (data.success) {
                     menuItems = data.menuItems;
+                    
+                    // Auto-validate images after loading
+                    await validateBrokenImages();
+                    
                     filteredMenuItems = [...menuItems];
                     updateMenuStats();
                     renderMenuTable();
@@ -2353,8 +2351,7 @@
                         <td>
                             <div class="menu-image-container" style="width: 60px; height: 60px; border-radius: 8px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openUploadModal(${item.id}, '${item.name}')">
                                 ${imageSrc ? 
-                                    `<img src="${imageSrc}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;" 
-                                          onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-camera text-muted\\' style=\\'font-size: 24px;\\'></i>';">` :
+                                    `<img src="${imageSrc}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
                                     '<i class="bi bi-camera text-muted"></i>'
                                 }
                             </div>
@@ -2489,6 +2486,77 @@
                 const submitBtn = document.querySelector('#addMenuPage .action-btn');
                 submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save / Add';
                 submitBtn.disabled = false;
+            }
+        }
+
+        // Auto-validate broken images and clean them from database
+        async function validateBrokenImages() {
+            console.log('Starting image validation...');
+            
+            let brokenCount = 0;
+            const itemsToUpdate = [];
+            
+            for (let item of menuItems) {
+                if (item.image && item.image !== '') {
+                    try {
+                        // Use a promise-based image check
+                        const isImageValid = await new Promise((resolve) => {
+                            const img = new Image();
+                            img.onload = () => resolve(true);
+                            img.onerror = () => resolve(false);
+                            img.src = item.image;
+                            
+                            // Timeout after 3 seconds
+                            setTimeout(() => resolve(false), 3000);
+                        });
+                        
+                        if (!isImageValid) {
+                            console.log(`Broken image detected for item ${item.id}: ${item.name}`);
+                            itemsToUpdate.push(item.id);
+                            brokenCount++;
+                        }
+                    } catch (error) {
+                        console.log(`Error checking image for item ${item.id}:`, error);
+                        itemsToUpdate.push(item.id);
+                        brokenCount++;
+                    }
+                }
+            }
+            
+            // Update database to remove broken image URLs
+            if (itemsToUpdate.length > 0) {
+                try {
+                    const response = await fetch('index.php?controller=admin&action=clearBrokenImages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            itemIds: itemsToUpdate
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log(`Cleaned ${brokenCount} broken image URLs from database`);
+                        
+                        // Update local menuItems array
+                        menuItems = menuItems.map(item => {
+                            if (itemsToUpdate.includes(item.id)) {
+                                item.image = null;
+                            }
+                            return item;
+                        });
+                        
+                        if (brokenCount > 0) {
+                            showNotification('info', `Cleaned ${brokenCount} broken image${brokenCount > 1 ? 's' : ''}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cleaning broken images:', error);
+                }
+            } else {
+                console.log('All images are valid');
             }
         }
 
@@ -3484,168 +3552,67 @@
         function toggleSound() {
             isSoundEnabled = !isSoundEnabled;
             const soundIcon = document.getElementById('soundIcon');
+            const soundText = document.getElementById('soundText');
             const soundButton = document.getElementById('soundButton');
             
             if (isSoundEnabled) {
-                soundIcon.className = 'bi bi-volume-up';
+                soundIcon.className = 'bi bi-volume-up me-2';
+                soundText.textContent = 'Âm thanh';
                 soundButton.classList.remove('muted');
-                showNotification('success', '🔊 Đã bật âm thanh thông báo');
+                showNotification('🔊 Đã bật âm thanh thông báo', 'info');
                 
-                // Initialize audio on user interaction
-                initializeAudio();
-                
-                // Test sound after a short delay
-                setTimeout(() => {
-                    console.log('Testing notification sound...');
-                    playNotificationSound();
-                }, 500);
+                // Test sound
+                setTimeout(() => playNotificationSound(), 500);
             } else {
-                soundIcon.className = 'bi bi-volume-mute';
+                soundIcon.className = 'bi bi-volume-mute me-2';
+                soundText.textContent = 'Tắt tiếng';
                 soundButton.classList.add('muted');
-                showNotification('info', '🔇 Đã tắt âm thanh thông báo');
+                showNotification('🔇 Đã tắt âm thanh thông báo', 'info');
             }
             
             // Save preference
             localStorage.setItem('soundEnabled', isSoundEnabled);
         }
 
-        // Initialize sound system
-        let audioContext = null;
-        let isAudioInitialized = false;
-
-        // Initialize audio context on first user interaction
-        function initializeAudio() {
-            if (isAudioInitialized) return;
-            
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                isAudioInitialized = true;
-                console.log('Audio context initialized');
-            } catch (error) {
-                console.log('Web Audio API not supported, using fallback');
-                isAudioInitialized = false;
-            }
-        }
-
         // Play notification sound
         function playNotificationSound() {
             if (!isSoundEnabled) return;
             
-            console.log('Playing notification sound...');
-            
-            // Initialize audio on first call
-            if (!isAudioInitialized) {
-                initializeAudio();
-            }
-            
             try {
-                if (isAudioInitialized && audioContext) {
-                    // Resume audio context if suspended (required by browsers)
-                    if (audioContext.state === 'suspended') {
-                        audioContext.resume();
-                    }
-                    
-                    // Play pleasant notification melody
-                    playTone(audioContext, 800, 0.15, 'sine'); // High note
-                    setTimeout(() => playTone(audioContext, 600, 0.15, 'sine'), 200); // Low note
-                    setTimeout(() => playTone(audioContext, 800, 0.25, 'sine'), 400); // High note long
-                    
-                    // Visual feedback
-                    showSoundWave();
-                } else {
-                    // Fallback to HTML5 audio
-                    playSimpleBeep();
-                }
+                // Tạo âm thanh thông báo đẹp hơn bằng Web Audio API
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Tạo chuỗi âm thanh: ding-dong-ding
+                playTone(audioContext, 800, 0.1, 'sine'); // Nốt cao
+                setTimeout(() => playTone(audioContext, 600, 0.1, 'sine'), 150); // Nốt thấp
+                setTimeout(() => playTone(audioContext, 800, 0.2, 'sine'), 300); // Nốt cao dài
+                
             } catch (error) {
-                console.log('Audio error:', error);
-                // Final fallback
+                // Fallback to simple beep if Web Audio API not supported
                 playSimpleBeep();
             }
         }
 
         function playTone(audioContext, frequency, duration, type = 'sine') {
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = frequency;
-                oscillator.type = type;
-                
-                // Smooth volume envelope
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + duration);
-            } catch (error) {
-                console.log('Tone generation error:', error);
-            }
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
         }
 
         function playSimpleBeep() {
-            try {
-                // Create multiple short beeps for attention
-                const beep1 = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYVBzCN1PDEfCEEJXzN8daJOQUYdLfx5bNaGAo3d8XmwXcvEilc2/TJheT2eT3pqWEWBjKN2fPGeCEEJHvN8daHOQUaeCzq6ZhVFAg+ltryxnkfCCR+9+1qNjV6pxAADNJAEyJnPBAADHLjNP3CsJJdgBATN0qDPBAADBJnTJJdNlB3Br+fTHQYBTmN2vPDeSAEKm/t8dJ5OwYfd8bv3o9ACgcpf9f022U1D2FD6uyjVhMJMmfL8dl/OgYWcj+k5adbJwktaNn2w3gnBiKC3+x8PgZFdsPt454xGh1ZquvYlUQSDTSa2u/DeSoFJnrR7duMPwgYdLvq5ZdPCwk3o9zuxnfYqF';
-                beep1.volume = 0.6;
-                beep1.play().catch(e => console.log('Simple beep failed:', e));
-                
-                // Second beep for emphasis
-                setTimeout(() => {
-                    const beep2 = beep1.cloneNode();
-                    beep2.volume = 0.4;
-                    beep2.play().catch(e => console.log('Second beep failed:', e));
-                }, 300);
-                
-            } catch (error) {
-                console.log('Simple beep error:', error);
-                // Last resort - try system beep
-                try {
-                    navigator.vibrate && navigator.vibrate([200, 100, 200]);
-                } catch (e) {
-                    console.log('All audio methods failed');
-                }
-            }
-        }
-
-        // Test sound function
-        function testSound() {
-            console.log('Test sound button clicked');
-            initializeAudio();
-            
-            if (isSoundEnabled) {
-                playNotificationSound();
-                showNotification('success', '🎵 Testing notification sound!');
-            } else {
-                showNotification('warning', '🔇 Please enable sound first');
-            }
-        }
-
-        // Visual sound wave effect
-        function showSoundWave() {
-            const soundButton = document.getElementById('soundButton');
-            if (soundButton) {
-                soundButton.classList.add('sound-active');
-                setTimeout(() => {
-                    soundButton.classList.remove('sound-active');
-                }, 1000);
-            }
-        }
-
-        // Initialize on page interaction
-        document.addEventListener('click', function initOnClick() {
-            initializeAudio();
-            document.removeEventListener('click', initOnClick);
-        }, { once: true });
-
-        document.addEventListener('keydown', function initOnKey() {
-            initializeAudio();
-            document.removeEventListener('keydown', initOnKey);
-        }, { once: true });
-            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmYVBzCN1PDEfCEEJXzN8daJOQUYdLfx5bNaGAo3d8XmwXcvEilc2/TJheT2eT3pqWEWBjKN2fPGeCEEJHvN8daHOQUaeCzq6ZhVFAg+ltryxnkfCCR+9+1qNjV6pxAADNJAEyJnPBAADHLjNP3CsJJdgBATN0qDPBAADBJnTJJdNlB3Br+fTHQYBTmN2vPDeSAEKm/t8dJ5OwYfd8bv3o9ACgcpf9f022U1D2FD6uyjVhMJMmfL8dl/OgYWcj+k5adbJwktaNn2w3gnBiKC3+x8PgZFdsPt454xGh1ZquvYlUQSDTSa2u/DeSoFJnrR7duMPwgYdLvq5ZdPCwk3o9zuxnfYqF');
+            // Enhanced simple beep - longer and more pleasant
+            const audio = new Audio('data:audio/wav;base64,UklGRhoBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQgBAAC0ssyDPK8TBLvhG0TH0hVE4wkkRu7wIkHdwiY+mZYhOmeQHStvgBg2WVQQP0gPE0dGC19dBkZtRVZGOCwJLhVOCyoAVRcsKCgOCxtVDj8nKB5bQR4VKTc9SVdIGydJF1gVMg1gNgdLRRdwTCMPgCclNz8yXy9gH1s3CQZtLQQEGSAGEy8XIl0REVBEMyIAXRU9HgKiPTVOCCUcITs3RhE6AhAAA/URADcFDgkDCREJKAIaCwJTCjcOBBdCBzkNDwgOOw4LBgAKDwIABbD7+OjR9fDW/vC7/fCF+vdz9/Zk8vdP8PhB6Pks5vkf6vgQ8vkC+v4FBA0IPRENKdYCOJAGOKYKOZ0OOVAPMo8OIXQIJHcCGFf9AFAA+/8t+/q3/PP89f3sCP0AEgP+IwMAMAIA+v8w9fgs6fIc4e8R3esPuPDy1YLyR9Hw8XnQ8JdkyP73Nbn+7zuv/Pk1qP/8OqT8AQCe+P8Gmfb+DZT0/RaR8/shjvP6LKf7COKP+xHdkPsJ2pP6/tiV+vHZkfvh2430YtqW8TrcsPCG3rr+3+FH/0XlLP9f6Bb+HusA/JXr/PdN7ary6e7P8WDxz/Hm8/3xvvby8ob7//WgA/PVDPP0BwP0/ggF9EUJBO6TB/bqcQn24nYK+N8lCvPaSAny1XwFytSg/07V3+kJ2K3Vg9xRwmbh5dZc50bY/+2r2S/zyOsn3OMLAAL4A9cLAOcT3QUD0xsJAyEhCQIjKwsBISEIAB4UBQEYAwDTEnv+Fxd++kEZd/W4HXT+mSNy+Pkpc+6tMHLp8j4N6sNR7v7LXb7K1GW+KdxetFbip6n+6IKglO93nBb29E2i+vMILKf+7hEyr/vs+TTC+eMqzdDvDRbcgBs5zJAoLrmGNjyoQUS2mPEz');
             audio.volume = 0.5;
             audio.play().catch(e => console.log('Cannot play notification sound'));
         }
@@ -4431,10 +4398,7 @@
                     // Check if there are new orders
                     if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
                         const newOrdersCount = currentOrderCount - lastOrderCount;
-                        console.log(`🔔 NEW ORDER DETECTED! Count: ${newOrdersCount}`);
-                        showNotification('success', `🍽️ ${newOrdersCount} đơn hàng mới!`);
-                        
-                        // Play notification sound
+                        showNotification(`${newOrdersCount} new order(s) received!`, 'success');
                         playNotificationSound();
                         
                         // Update order badge if exists

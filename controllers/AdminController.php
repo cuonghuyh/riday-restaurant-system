@@ -13,15 +13,15 @@ class AdminController {
     }
     
     public function index() {
-        // Trang admin chính - dùng riday dashboard
+        // Trang admin chính
         $menuItems = $this->menuModel->getMenuItems();
-        include 'views/riday_dashboard.php';
+        include 'views/admin_dashboard.php';
     }
     
     public function menu() {
-        // Trang quản lý menu - dùng riday dashboard
+        // Trang quản lý menu
         $menuItems = $this->menuModel->getMenuItems();
-        include 'views/riday_dashboard.php';
+        include 'views/admin_menu.php';
     }
     
     public function getMenuItems() {
@@ -383,6 +383,48 @@ class AdminController {
             echo json_encode([
                 'success' => false,
                 'message' => 'Lỗi test Cloudinary: ' . $e->getMessage()
+            ]);
+        }
+    }
+    
+    public function clearBrokenImages() {
+        header('Content-Type: application/json');
+        
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $itemIds = $input['itemIds'] ?? [];
+            
+            if (empty($itemIds)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No item IDs provided'
+                ]);
+                return;
+            }
+            
+            $pdo = DB::getInstance();
+            $placeholders = str_repeat('?,', count($itemIds) - 1) . '?';
+            $stmt = $pdo->prepare("UPDATE menu_items SET image = NULL WHERE id IN ($placeholders)");
+            $result = $stmt->execute($itemIds);
+            
+            if ($result) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cleared ' . count($itemIds) . ' broken image URLs',
+                    'cleared_count' => count($itemIds)
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to clear broken images'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            error_log('clearBrokenImages error: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error clearing broken images: ' . $e->getMessage()
             ]);
         }
     }

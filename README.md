@@ -23,15 +23,18 @@ php-mvc-sample/
 │
 ├── 📁 models/                # Data access layer
 │   ├── DB.php                # Database connection singleton
-│   ├── MenuModel.php         # CRUD operations cho menu items
+│   ├── MenuModel.php         # CRUD operations cho menu
 │   ├── OrderModel.php        # CRUD operations cho orders
+│   ├── RestaurantModel.php   # Thông tin nhà hàng
 │   └── CloudinaryAPI.php     # Wrapper cho Cloudinary API
 │
 ├── 📁 views/                 # Presentation layer
 │   ├── restaurant_layout.php # Layout chính với Bootstrap 5
 │   ├── restaurant_home.php   # Trang chủ khách hàng
-│   ├── menu_dynamic.php      # Menu dynamic từ database
-│   └── riday_dashboard.php   # Admin dashboard với Riday template
+│   ├── menu_view.php         # Hiển thị menu cho khách
+│   ├── menu_dynamic.php      # Menu với dynamic loading
+│   ├── admin_menu.php        # Quản lý menu cho admin
+│   └── order_dashboard.php   # Dashboard realtime cho nhà bếp
 │
 └── 📁 assets/                # Static resources
     ├── css/
@@ -48,19 +51,16 @@ php-mvc-sample/
 - ✅ Real-time order tracking
 
 ### 👨‍💼 **Admin:**
-- ✅ Modern Riday dashboard template
-- ✅ Dark/Light theme toggle
-- ✅ Global search với highlighting
-- ✅ CRUD menu items với real-time updates
+- ✅ CRUD menu items
 - ✅ Upload/quản lý hình ảnh (Cloudinary)
-- ✅ Auto-sync broken images
+- ✅ Quản lý trạng thái món ăn
 - ✅ Thống kê đơn hàng
 
 ### 👨‍🍳 **Nhà bếp:**
 - ✅ Dashboard realtime orders
 - ✅ Cập nhật trạng thái đơn hàng
 - ✅ Thông báo âm thanh
-- ✅ Auto-refresh data
+- ✅ Auto-refresh
 
 ## 🛠️ Tech Stack
 
@@ -81,9 +81,8 @@ php-mvc-sample/
 ## 🔗 URLs
 
 - `/` - Trang chủ khách hàng
-- `/index.php?controller=admin&action=index` - Riday Admin Dashboard
+- `/index.php?controller=admin&action=menu` - Admin panel
 - `/index.php?controller=order&action=dashboard` - Kitchen dashboard
-- `/index.php?controller=restaurant&action=menu` - Dynamic menu
 
 ## 📝 Notes
 
