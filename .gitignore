@@ -1,2 +1,14 @@
 .DS_Store
-vendor
+vendor/
+.env
+*.log
+node_modules/
+uploads/*
+!uploads/.gitkeep
+qr-codes/*
+!qr-codes/.gitkeep
+.vscode/
+*.tmp
+*.temp
+debug_*
+test_*

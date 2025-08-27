@@ -1,11 +1,22 @@
 services:
   - type: web
-    name: riday-restaurant-system
-    env: docker
+    name: restaurant-ordering
+    env: php
     plan: free
-    healthCheckPath: /
+    buildCommand: composer install --no-dev --optimize-autoloader
+    startCommand: php -S 0.0.0.0:$PORT -t .
     envVars:
-      - key: PHP_VERSION
-        value: 8.2
-      - key: ENVIRONMENT  
-        value: production
+      - key: DB_HOST
+        value: YOUR_DB_HOST
+      - key: DB_NAME
+        value: YOUR_DB_NAME
+      - key: DB_USER
+        value: YOUR_DB_USER
+      - key: DB_PASS
+        value: YOUR_DB_PASS
+      - key: CLOUDINARY_CLOUD_NAME
+        value: YOUR_CLOUDINARY_CLOUD_NAME
+      - key: CLOUDINARY_API_KEY
+        value: YOUR_CLOUDINARY_API_KEY
+      - key: CLOUDINARY_API_SECRET
+        value: YOUR_CLOUDINARY_API_SECRET
